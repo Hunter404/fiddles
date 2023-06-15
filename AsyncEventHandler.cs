@@ -2,6 +2,7 @@ namespace TestEngine.Sequence.Common;
 
 public class AsyncEventHandler<T>
 {
+    private readonly HashSet<AsyncEventHandler<T>> _otherEventHandlers = new();
     private readonly HashSet<Func<object, T, Task>> _invocationList = new ();
     private readonly object _lock = new();
 
@@ -13,10 +14,21 @@ public class AsyncEventHandler<T>
             invocations = new HashSet<Func<object, T, Task>>(_invocationList);
         }
 
-        foreach (var callback in invocations)
+        var tasks = invocations
+            .Select(callback => callback(sender, eventArgs))
+            .ToList();
+
+        HashSet<AsyncEventHandler<T>> otherEventHandlers;
+        lock (_lock)
         {
-            await callback(sender, eventArgs);
+            otherEventHandlers = new HashSet<AsyncEventHandler<T>>(_otherEventHandlers);
         }
+
+        tasks
+            .AddRange(otherEventHandlers
+                .Select(handler => handler.InvokeAsync(sender, eventArgs)));
+
+        await Task.WhenAll(tasks);
     }
 
     public void Clear()
@@ -53,34 +65,19 @@ public class AsyncEventHandler<T>
 
         e ??= new AsyncEventHandler<T>();
 
-        HashSet<Func<object, T, Task>> otherCallbacks;
-
-        lock (other._lock)
-        {
-            otherCallbacks = new HashSet<Func<object, T, Task>>(other._invocationList);
-        }
-
         lock (e._lock)
         {
-            foreach (var callback in otherCallbacks)
-            {
-                e._invocationList.Add(callback);
-            }
+            e._otherEventHandlers.Add(other);
         }
 
         return e;
     }
 
-    public static AsyncEventHandler<T>? operator -(AsyncEventHandler<T>? e, Func<object, T, Task> callback)
+    public static AsyncEventHandler<T>? operator -(AsyncEventHandler<T>? e, Func<object, T, Task>? callback)
     {
-        if (callback == null)
+        if (e == null || callback == null)
         {
-            throw new NullReferenceException("Callback can't be null");
-        }
-
-        if (e == null)
-        {
-            return null;
+            return e;
         }
 
         lock (e._lock)
@@ -98,19 +95,9 @@ public class AsyncEventHandler<T>
             return e;
         }
 
-        HashSet<Func<object, T, Task>> otherCallbacks;
-
-        lock (other._lock)
-        {
-            otherCallbacks = new HashSet<Func<object, T, Task>>(other._invocationList);
-        }
-
         lock (e._lock)
         {
-            foreach (var callback in otherCallbacks)
-            {
-                e._invocationList.Remove(callback);
-            }
+            e._otherEventHandlers.Remove(other);
         }
 
         return e;
