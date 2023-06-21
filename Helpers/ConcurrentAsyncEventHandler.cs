@@ -1,6 +1,6 @@
 namespace TestEngine.Sequence.Common;
 
-public class AsyncEventHandler<T>
+public class ConcurrentAsyncEventHandler<T>
 {
     private readonly HashSet<AsyncEventHandler<T>> _otherEventHandlers = new();
     private readonly HashSet<Func<object, T, Task>> _invocationList = new ();

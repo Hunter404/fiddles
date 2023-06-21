@@ -2,7 +2,9 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 /// <summary>
-/// Boilerplate ViewModel implementing INotifyPropertyChanged
+/// This is a base ViewModel class that implements the INotifyPropertyChanged interface.
+/// This interface is a key part of the Model-View-ViewModel (MVVM) design pattern that is often used in .NET applications,
+/// especially ones that have a graphical user interface.
 /// </summary>
 public class ViewModelBase : INotifyPropertyChanged
 {

@@ -5,7 +5,8 @@
 // -----------------------------------------------------------------------
 
 /// <summary>
-/// A basic C# circular buffer stream for reading and writing for example logs.
+/// The CircularBufferStream class is a custom implementation of a Stream using a circular buffer, which is a data structure that uses a single, fixed-size buffer as if it were connected end-to-end.
+/// This kind of data structure is very useful for situations where you want a fixed-sized buffer and old data can be automatically overwritten when the buffer is full.
 /// </summary>
 public class CircularBufferStream : Stream
 {
