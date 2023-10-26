@@ -1,0 +1,47 @@
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+/// <summary>
+/// Converts an enumeration to and from its JSON representation based on the description attribute.
+/// </summary>
+/// <typeparam name="T">The type of the enumeration.</typeparam>
+public class JsonEnumConverter<T> : JsonConverter<T> where T : Enum
+{
+    /// <summary>
+    /// Reads and converts the JSON to type T.
+    /// </summary>
+    /// <param name="reader">The reader for deserialization.</param>
+    /// <param name="typeToConvert">The type to convert.</param>
+    /// <param name="options">The serializer options.</param>
+    /// <returns>The deserialized value.</returns>
+    /// <exception cref="JsonException">Thrown when the JSON is invalid or when the description does not match any enumeration values.</exception>
+    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var description = reader.GetString();
+        if (description == null)
+        {
+            throw new JsonException("The JSON value is null.");
+        }
+
+        if (description.TryParseEnum(out T result))
+        {
+            return result;
+        }
+        else
+        {
+            throw new JsonException($"Unable to convert \"{description}\" to {typeof(T)}");
+        }
+    }
+    
+    /// <summary>
+    /// Writes the value as a JSON string using the description attribute of the enumeration value.
+    /// </summary>
+    /// <param name="writer">The writer for serialization.</param>
+    /// <param name="value">The enumeration value to serialize.</param>
+    /// <param name="options">The serializer options.</param>
+    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.GetDescription());
+    }
+}
